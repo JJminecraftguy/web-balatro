@@ -4500,22 +4500,36 @@ function runVersion(version) {
             Module = window.Module || {}
             Module.INITIAL_MEMORY = 268435456
             Module.canvas = canvas
+
             function fitCanvas() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const cw = canvas.width || 1280;
-    const ch = canvas.height || 960;
-    const scale = Math.min(vw / cw, vh / ch);
-    canvas.style.width = Math.floor(cw * scale) + 'px';
-    canvas.style.height = Math.floor(ch * scale) + 'px';
-}
-const resizeObserver = new ResizeObserver(fitCanvas);
-resizeObserver.observe(document.documentElement);
-window.addEventListener('resize', fitCanvas);
-const _origSetMode = Module.canvas;
-const canvasAttrObserver = new MutationObserver(fitCanvas);
-canvasAttrObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
-fitCanvas();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const cw = canvas.width || 1280;
+                const ch = canvas.height || 960;
+                const scale = Math.min(vw / cw, vh / ch);
+                canvas.style.width = Math.floor(cw * scale) + 'px';
+                canvas.style.height = Math.floor(ch * scale) + 'px';
+            }
+
+            function syncGameViewport() {
+                fitCanvas();
+            }
+
+            const resizeObserver = new ResizeObserver(syncGameViewport);
+            resizeObserver.observe(document.documentElement);
+            window.addEventListener('resize', syncGameViewport);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', syncGameViewport);
+            }
+
+            const canvasAttrObserver = new MutationObserver(syncGameViewport);
+            canvasAttrObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
+
+            // Trigger a few post-mount reflows so first render fills the viewport.
+            requestAnimationFrame(syncGameViewport);
+            requestAnimationFrame(syncGameViewport);
+            setTimeout(syncGameViewport, 100);
+
             Module.printErr = console.error
             Module.arguments = ["game.love"] // 1st argument is the path of the package
             Module.preRun = [
@@ -4534,6 +4548,9 @@ fitCanvas();
             s.async = true;
             s.onload = function () {
                 Love(Module);
+                syncGameViewport();
+                requestAnimationFrame(syncGameViewport);
+                setTimeout(syncGameViewport, 300);
             };
             document.body.appendChild(s);
         },
