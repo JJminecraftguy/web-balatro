@@ -4467,10 +4467,6 @@ async function renderVersionList() {
  */
 function runVersion(version) {
     loadCachedGame(version).then(
-        /**
-         * 
-         * @param {Blob} game - The zip data of the game
-         */
         async (game) => {
             const PREFIX = "Balatro_" + version + "_";
             const originalOpen = indexedDB.open;
@@ -4501,11 +4497,16 @@ function runVersion(version) {
             Module.INITIAL_MEMORY = 268435456
             Module.canvas = canvas
 
+            // Store the target display dimensions - use fixed values
+            const TARGET_WIDTH = 1280;
+            const TARGET_HEIGHT = 960;
+            
             function fitCanvas() {
                 const vw = window.innerWidth;
                 const vh = window.innerHeight;
-                const cw = canvas.width || 1280;
-                const ch = canvas.height || 960;
+                // Always use target dimensions for scaling, not canvas internal dimensions
+                const cw = TARGET_WIDTH;
+                const ch = TARGET_HEIGHT;
                 const scale = Math.min(vw / cw, vh / ch);
                 canvas.style.width = Math.floor(cw * scale) + 'px';
                 canvas.style.height = Math.floor(ch * scale) + 'px';
@@ -4525,32 +4526,36 @@ function runVersion(version) {
             setTimeout(syncGameViewport, 120);
 
             Module.printErr = console.error
-            Module.arguments = ["game.love"] // 1st argument is the path of the package
+            Module.arguments = ["game.love"]
             Module.preRun = [
-                function () { // Load game.love into the fs
+                function () {
                     Module.addRunDependency("fp game.love");
                     var ptr = Module.getMemory(data.length);
-                    Module['HEAPU8'].set(data, ptr); // Put data after the chunk of memory
-                    Module.FS_createDataFile('/', "game.love", data, true, true, true); // Add the file
+                    Module['HEAPU8'].set(data, ptr);
+                    Module.FS_createDataFile('/', "game.love", data, true, true, true);
                     Module.removeRunDependency("fp game.love");
                 }
             ]
-            // The package exports the Love function
+            
             var s = document.createElement('script');
             s.type = 'text/javascript';
             s.src = "run/11.5/love.min.js";
             s.async = true;
             s.onload = function () {
                 Love(Module);
+                // After LÖVE initializes, ensure canvas internal size matches our target
+                // but keep display size based on container
                 syncGameViewport();
                 requestAnimationFrame(syncGameViewport);
                 setTimeout(syncGameViewport, 300);
                 setTimeout(syncGameViewport, 700);
+                // Also run after a longer delay in case game changes canvas size
+                setTimeout(syncGameViewport, 1500);
             };
             document.body.appendChild(s);
         },
         (error) => {
-            throw new Error("Unknown game version '" +version + "'")
+            throw new Error("Unknown game version '" + version + "'")
         }
     )
 }
