@@ -4466,6 +4466,8 @@ function runVersion(version) {
          * @param {Blob} game - The zip data of the game
          */
         async (game) => {
+            let resizeCanvasToWindow = null
+            let observeViewportSize = null
             const PREFIX = "Balatro_" + version + "_";
             const originalOpen = indexedDB.open;
             const originalDeleteDatabase = indexedDB.deleteDatabase;
@@ -4484,7 +4486,7 @@ function runVersion(version) {
             canvas.id = "canvas"
             document.body.appendChild(canvas)
             document.body.classList.add("game")
-
+          
             const resizeCanvasToViewport = () => {
                 const width = window.innerWidth;
                 const height = window.innerHeight;
