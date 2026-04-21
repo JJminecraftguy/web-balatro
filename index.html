@@ -4467,6 +4467,7 @@ function runVersion(version) {
          * @param {Blob} game - The zip data of the game
          */
         async (game) => {
+            let resizeCanvasToWindow = null
             const PREFIX = "Balatro_" + version + "_";
             const originalOpen = indexedDB.open;
             const originalDeleteDatabase = indexedDB.deleteDatabase;
@@ -4485,6 +4486,19 @@ function runVersion(version) {
             canvas.id = "canvas"
             document.body.appendChild(canvas)
             document.body.classList.add("game")
+
+            resizeCanvasToWindow = () => {
+                const width = window.innerWidth
+                const height = window.innerHeight
+                canvas.width = width
+                canvas.height = height
+
+                if (window.Module && typeof window.Module.setCanvasSize === "function") {
+                    window.Module.setCanvasSize(width, height)
+                }
+            }
+            resizeCanvasToWindow()
+            window.addEventListener("resize", resizeCanvasToWindow)
 
             // Disable fullscreen — browsers block automatic fullscreen requests
             canvas.requestFullscreen = function() { return Promise.resolve(); }
