@@ -216,8 +216,9 @@ input#makeName {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 canvas#canvas {
@@ -226,7 +227,6 @@ canvas#canvas {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
     </style>
     <script>
@@ -4467,6 +4467,8 @@ function runVersion(version) {
          * @param {Blob} game - The zip data of the game
          */
         async (game) => {
+            let resizeCanvasToWindow = null
+            let observeViewportSize = null
             const PREFIX = "Balatro_" + version + "_";
             const originalOpen = indexedDB.open;
             const originalDeleteDatabase = indexedDB.deleteDatabase;
@@ -4485,6 +4487,34 @@ function runVersion(version) {
             canvas.id = "canvas"
             document.body.appendChild(canvas)
             document.body.classList.add("game")
+
+            resizeCanvasToWindow = () => {
+                const width = window.innerWidth
+                const height = window.innerHeight
+                canvas.width = width
+                canvas.height = height
+                canvas.style.width = width + "px"
+                canvas.style.height = height + "px"
+
+                if (window.Module && typeof window.Module.setCanvasSize === "function") {
+                    window.Module.setCanvasSize(width, height)
+                }
+            }
+            resizeCanvasToWindow()
+            window.addEventListener("resize", resizeCanvasToWindow)
+            window.addEventListener("orientationchange", resizeCanvasToWindow)
+            window.addEventListener("click", resizeCanvasToWindow)
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener("resize", resizeCanvasToWindow)
+            }
+
+            if (typeof ResizeObserver === "function") {
+                observeViewportSize = new ResizeObserver(() => {
+                    resizeCanvasToWindow()
+                })
+                observeViewportSize.observe(document.documentElement)
+            }
 
             // Disable fullscreen — browsers block automatic fullscreen requests
             canvas.requestFullscreen = function() { return Promise.resolve(); }
@@ -4513,6 +4543,9 @@ function runVersion(version) {
             s.async = true;
             s.onload = function () {
                 Love(Module);
+                resizeCanvasToWindow()
+                requestAnimationFrame(resizeCanvasToWindow)
+                setTimeout(resizeCanvasToWindow, 0)
             };
             document.body.appendChild(s);
         },
