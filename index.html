@@ -216,8 +216,9 @@ input#makeName {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 canvas#canvas {
@@ -226,7 +227,6 @@ canvas#canvas {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
     </style>
     <script>
@@ -4492,6 +4492,8 @@ function runVersion(version) {
                 const height = window.innerHeight
                 canvas.width = width
                 canvas.height = height
+                canvas.style.width = width + "px"
+                canvas.style.height = height + "px"
 
                 if (window.Module && typeof window.Module.setCanvasSize === "function") {
                     window.Module.setCanvasSize(width, height)
