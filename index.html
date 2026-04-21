@@ -197,7 +197,7 @@ label {
   display: inline;
 }
 
-label[for=makeName] {
+label[for=makeName] {.game
   color: var(--accent);
 }
 
@@ -213,19 +213,25 @@ input#makeName {
 }
 
 .game {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 canvas#canvas {
+  display: block;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
     </style>
     <script>
@@ -4483,7 +4489,29 @@ function runVersion(version) {
             const canvas = document.createElement("canvas")
             canvas.id = "canvas"
             document.body.appendChild(canvas)
-            document.body.classList.add("game")
+            const GAME_WIDTH = 1920;
+            const GAME_HEIGHT = 1080;
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+
+                  function resizeCanvas() {
+            const container = document.body;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            const scaleX = containerWidth / GAME_WIDTH;
+            const scaleY = containerHeight / GAME_HEIGHT;
+            const scale = Math.min(scaleX, scaleY);
+            
+            canvas.style.width = (GAME_WIDTH * scale) + 'px';
+            canvas.style.height = (GAME_HEIGHT * scale) + 'px';
+        }
+
+        // Initial resize
+        resizeCanvas();
+        
+        // Add resize listener
+        window.addEventListener('resize', resizeCanvas);
 
             // Disable fullscreen — browsers block automatic fullscreen requests
             canvas.requestFullscreen = function() { return Promise.resolve(); }
