@@ -4500,22 +4500,25 @@ function runVersion(version) {
             Module = window.Module || {}
             Module.INITIAL_MEMORY = 268435456
             Module.canvas = canvas
+
             function fitCanvas() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const cw = canvas.width || 1280;
-    const ch = canvas.height || 960;
-    const scale = Math.min(vw / cw, vh / ch);
-    canvas.style.width = Math.floor(cw * scale) + 'px';
-    canvas.style.height = Math.floor(ch * scale) + 'px';
-}
-const resizeObserver = new ResizeObserver(fitCanvas);
-resizeObserver.observe(document.documentElement);
-window.addEventListener('resize', fitCanvas);
-const _origSetMode = Module.canvas;
-const canvasAttrObserver = new MutationObserver(fitCanvas);
-canvasAttrObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
-fitCanvas();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const cw = canvas.width || 1280;
+                const ch = canvas.height || 960;
+                const scale = Math.min(vw / cw, vh / ch);
+                canvas.style.width = Math.floor(cw * scale) + 'px';
+                canvas.style.height = Math.floor(ch * scale) + 'px';
+            }
+
+            const resizeObserver = new ResizeObserver(fitCanvas);
+            resizeObserver.observe(document.documentElement);
+            window.addEventListener('resize', fitCanvas);
+
+            fitCanvas();
+            requestAnimationFrame(fitCanvas);
+            setTimeout(fitCanvas, 120);
+
             Module.printErr = console.error
             Module.arguments = ["game.love"] // 1st argument is the path of the package
             Module.preRun = [
@@ -4534,6 +4537,10 @@ fitCanvas();
             s.async = true;
             s.onload = function () {
                 Love(Module);
+                fitCanvas();
+                requestAnimationFrame(fitCanvas);
+                setTimeout(fitCanvas, 250);
+                setTimeout(fitCanvas, 600);
             };
             document.body.appendChild(s);
         },
