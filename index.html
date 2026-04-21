@@ -4500,22 +4500,53 @@ function runVersion(version) {
             Module = window.Module || {}
             Module.INITIAL_MEMORY = 268435456
             Module.canvas = canvas
+
+            let maxViewportWidth = 0;
+            let maxViewportHeight = 0;
+
+            function getViewportSize() {
+                const vv = window.visualViewport;
+                const width = vv ? vv.width : window.innerWidth;
+                const height = vv ? vv.height : window.innerHeight;
+                return { width, height };
+            }
+
             function fitCanvas() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const cw = canvas.width || 1280;
-    const ch = canvas.height || 960;
-    const scale = Math.min(vw / cw, vh / ch);
-    canvas.style.width = Math.floor(cw * scale) + 'px';
-    canvas.style.height = Math.floor(ch * scale) + 'px';
-}
-const resizeObserver = new ResizeObserver(fitCanvas);
-resizeObserver.observe(document.documentElement);
-window.addEventListener('resize', fitCanvas);
-const _origSetMode = Module.canvas;
-const canvasAttrObserver = new MutationObserver(fitCanvas);
-canvasAttrObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
-fitCanvas();
+                const { width, height } = getViewportSize();
+                maxViewportWidth = Math.max(maxViewportWidth, width);
+                maxViewportHeight = Math.max(maxViewportHeight, height);
+
+                const cw = canvas.width || 1280;
+                const ch = canvas.height || 960;
+                const scale = Math.min(maxViewportWidth / cw, maxViewportHeight / ch);
+                canvas.style.width = Math.floor(cw * scale) + 'px';
+                canvas.style.height = Math.floor(ch * scale) + 'px';
+            }
+
+            function syncGameViewport() {
+                fitCanvas();
+            }
+
+            function resetViewportBaseline() {
+                const { width, height } = getViewportSize();
+                maxViewportWidth = width;
+                maxViewportHeight = height;
+                syncGameViewport();
+                requestAnimationFrame(syncGameViewport);
+            }
+
+            const resizeObserver = new ResizeObserver(syncGameViewport);
+            resizeObserver.observe(document.documentElement);
+            window.addEventListener('resize', syncGameViewport);
+            window.addEventListener('orientationchange', () => {
+                setTimeout(resetViewportBaseline, 120);
+            });
+
+            // Run once now and a couple of times after mount/load to fix initial sizing.
+            syncGameViewport();
+            requestAnimationFrame(syncGameViewport);
+            setTimeout(syncGameViewport, 120);
+
             Module.printErr = console.error
             Module.arguments = ["game.love"] // 1st argument is the path of the package
             Module.preRun = [
@@ -4534,6 +4565,10 @@ fitCanvas();
             s.async = true;
             s.onload = function () {
                 Love(Module);
+                syncGameViewport();
+                requestAnimationFrame(syncGameViewport);
+                setTimeout(syncGameViewport, 300);
+                setTimeout(syncGameViewport, 700);
             };
             document.body.appendChild(s);
         },
