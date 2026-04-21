@@ -213,20 +213,19 @@ input#makeName {
 }
 
 .game {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 canvas#canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
 }
     </style>
     <script>
@@ -4486,6 +4485,36 @@ function runVersion(version) {
             document.body.appendChild(canvas)
             document.body.classList.add("game")
 
+            const resizeCanvasToViewport = () => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                canvas.style.width = width + "px";
+                canvas.style.height = height + "px";
+
+                if (window.Module && typeof window.Module.setCanvasSize === "function") {
+                    window.Module.setCanvasSize(width, height);
+                } else {
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+            };
+
+            const scheduleCanvasResize = () => {
+                window.requestAnimationFrame(resizeCanvasToViewport);
+            };
+
+            resizeCanvasToViewport();
+            window.addEventListener("resize", scheduleCanvasResize, { passive: true });
+            window.addEventListener("orientationchange", scheduleCanvasResize, { passive: true });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener("resize", scheduleCanvasResize, { passive: true });
+            }
+            if (typeof ResizeObserver === "function") {
+                const viewportObserver = new ResizeObserver(scheduleCanvasResize);
+                viewportObserver.observe(document.documentElement);
+            }
+            canvas.addEventListener("click", scheduleCanvasResize);
+
             // Disable fullscreen — browsers block automatic fullscreen requests
             canvas.requestFullscreen = function() { return Promise.resolve(); }
             document.documentElement.requestFullscreen = function() { return Promise.resolve(); }
@@ -4513,6 +4542,9 @@ function runVersion(version) {
             s.async = true;
             s.onload = function () {
                 Love(Module);
+                resizeCanvasToViewport();
+                requestAnimationFrame(resizeCanvasToViewport);
+                setTimeout(resizeCanvasToViewport, 0);
             };
             document.body.appendChild(s);
         },
