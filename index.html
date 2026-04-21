@@ -4508,6 +4508,31 @@ function runVersion(version) {
 
             Module.INITIAL_MEMORY = 268435456;
             Module.canvas = canvas;
+            function fitCanvas() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cw = canvas.width || 1280;
+    const ch = canvas.height || 960;
+    const scale = Math.min(vw / cw, vh / ch);
+    canvas.style.width = Math.floor(cw * scale) + 'px';
+    canvas.style.height = Math.floor(ch * scale) + 'px';
+}
+const resizeObserver = new ResizeObserver(fitCanvas);
+resizeObserver.observe(document.documentElement);
+window.addEventListener('resize', fitCanvas);
+const canvasAttrObserver = new MutationObserver(fitCanvas);
+canvasAttrObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
+fitCanvas();
+let _lastW = 0, _lastH = 0, _pollCount = 0;
+const _pollTimer = setInterval(() => {
+    _pollCount++;
+    if ((canvas.width !== _lastW || canvas.height !== _lastH) || _pollCount < 60) {
+        _lastW = canvas.width;
+        _lastH = canvas.height;
+        fitCanvas();
+    }
+    if (_pollCount >= 60) clearInterval(_pollTimer);
+}, 100);
             Module.printErr = console.error;
             Module.arguments = ["game.love"];
 
